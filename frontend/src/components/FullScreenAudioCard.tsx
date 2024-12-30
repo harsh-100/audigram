@@ -15,6 +15,7 @@ import {
   Close,
 } from '@mui/icons-material';
 import WaveSurfer from 'wavesurfer.js';
+import AnimatedGradient from './AnimatedGradient';
 
 interface Comment {
   id: string;
@@ -46,6 +47,23 @@ interface FullScreenAudioCardProps {
   canAutoplay: boolean;
 }
 
+// Add color generation function at the top level
+const generateRandomColors = () => {
+  const colors = [
+    ['#FF416C', '#FF4B2B'], // Red-Orange
+    ['#833ab4', '#fd1d1d', '#fcb045'], // Instagram
+    ['#4158D0', '#C850C0', '#FFCC70'], // Purple-Pink-Yellow
+    ['#0093E9', '#80D0C7'], // Blue-Cyan
+    ['#8EC5FC', '#E0C3FC'], // Light Blue-Purple
+    ['#D9AFD9', '#97D9E1'], // Pink-Cyan
+    ['#00DBDE', '#FC00FF'], // Cyan-Magenta
+    ['#FEE140', '#FA709A'], // Yellow-Pink
+    ['#3EECAC', '#EE74E1'], // Green-Pink
+    ['#FA8BFF', '#2BD2FF', '#2BFF88'], // Pink-Blue-Green
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
 const FullScreenAudioCard = ({
   audio,
   onLike,
@@ -59,6 +77,7 @@ const FullScreenAudioCard = ({
   const [showComments, setShowComments] = useState(false);
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const [gradientColors] = useState(() => generateRandomColors());
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -129,9 +148,12 @@ const FullScreenAudioCard = ({
   };
 
   return (
-    <Box className="absolute inset-0 bg-black">
-      {/* Gradient overlay */}
-      <Box className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-70" />
+    <Box className="absolute inset-0">
+      {/* Animated Gradient Background */}
+      {isVisible && <AnimatedGradient colors={gradientColors} />}
+
+      {/* Semi-transparent overlay for better readability */}
+      <Box className="absolute inset-0 bg-black bg-opacity-30" />
 
       {/* Audio visualization */}
       <Box 
@@ -169,7 +191,9 @@ const FullScreenAudioCard = ({
               <FavoriteBorder fontSize="large" />
             )}
           </IconButton>
-          <Typography className="text-white text-sm">{audio.likes}</Typography>
+          <Typography className="text-white text-sm drop-shadow-lg">
+            {audio.likes}
+          </Typography>
         </Box>
 
         <Box className="flex flex-col items-center">
@@ -179,7 +203,9 @@ const FullScreenAudioCard = ({
           >
             <Comment fontSize="large" />
           </IconButton>
-          <Typography className="text-white text-sm">{audio.comments}</Typography>
+          <Typography className="text-white text-sm drop-shadow-lg">
+            {audio.comments}
+          </Typography>
         </Box>
       </Box>
 
@@ -187,14 +213,14 @@ const FullScreenAudioCard = ({
       <Box className="absolute bottom-16 left-0 right-0 p-6 text-white">
         <Box className="flex items-center gap-2 mb-2">
           <MusicNote className="text-sm" />
-          <Typography variant="body1" className="font-semibold">
+          <Typography variant="body1" className="font-semibold drop-shadow-lg">
             {audio.title}
           </Typography>
         </Box>
-        <Typography variant="body2" className="opacity-80 font-medium">
+        <Typography variant="body2" className="opacity-80 font-medium drop-shadow-lg">
           @{audio.user.username}
         </Typography>
-        <Typography variant="body2" className="opacity-60 mt-2">
+        <Typography variant="body2" className="opacity-60 mt-2 drop-shadow-lg">
           {audio.description}
         </Typography>
       </Box>
