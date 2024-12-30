@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  bio       String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  audios      Audio[]
+  likes       Like[]
+  comments    Comment[]
+  followers   Follow[]    @relation("following")
+  following   Follow[]    @relation("followers")
+  savedAudios SavedAudio[]
+}
+
+model Audio {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  filePath    String
+  tags        String   // Stored as JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  likes       Like[]
+  comments    Comment[]
+  savedBy     SavedAudio[]
+
+  @@index([userId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String
+  audioId   String
+  user      User     @relation(fields: [userId], references: [id])
+  audio     Audio    @relation(fields: [audioId], references: [id])
+
+  @@unique([userId, audioId])
+  @@index([userId])
+  @@index([audioId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId    String
+  audioId   String
+  user      User     @relation(fields: [userId], references: [id])
+  audio     Audio    @relation(fields: [audioId], references: [id])
+
+  @@index([userId])
+  @@index([audioId])
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+
+  // Relations
+  followerId  String
+  followingId String
+  follower    User     @relation("following", fields: [followerId], references: [id])
+  following   User     @relation("followers", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model SavedAudio {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId    String
+  audioId   String
+  user      User     @relation(fields: [userId], references: [id])
+  audio     Audio    @relation(fields: [audioId], references: [id])
+
+  @@unique([userId, audioId])
+  @@index([userId])
+  @@index([audioId])
+}
