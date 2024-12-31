@@ -39,8 +39,8 @@ const AnimatedGradient = ({ colors = ['#833ab4', '#fd1d1d', '#fcb045'] }: Animat
       const gradient = ctx.createLinearGradient(
         centerX + Math.cos(gradientAngle) * radius,
         centerY + Math.sin(gradientAngle) * radius,
-        centerX + Math.cos(gradientAngle + Math.PI) * radius,
-        centerY + Math.sin(gradientAngle + Math.PI) * radius
+        centerX + Math.cos(gradientAngle + Math.PI * 0.9) * radius,
+        centerY + Math.sin(gradientAngle + Math.PI * 0.9) * radius
       );
 
       // Add color stops
@@ -53,7 +53,7 @@ const AnimatedGradient = ({ colors = ['#833ab4', '#fd1d1d', '#fcb045'] }: Animat
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Update angle for next frame
-      gradientAngle += 0.002;
+      gradientAngle += 0.02;
 
       // Request next frame
       animationFrameId = requestAnimationFrame(animate);
