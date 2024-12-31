@@ -58,7 +58,7 @@ router.post('/', auth, upload.single('audio'), async (req, res) => {
 });
 
 // Get random audios for feed
-router.get('/feed', async (req, res) => {
+router.get('/feed', auth, async (req, res) => {
   try {
     const audios = await prisma.audio.findMany({
       take: 10,
@@ -71,6 +71,14 @@ router.get('/feed', async (req, res) => {
             id: true,
             username: true,
             avatar: true
+          }
+        },
+        likes: {
+          where: {
+            userId: req.user!.id
+          },
+          select: {
+            userId: true
           }
         },
         _count: {

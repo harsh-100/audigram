@@ -51,12 +51,22 @@ const Home = () => {
 
   const fetchAudios = async () => {
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:5000/api/audio/feed', {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      setAudios(response.data);
+
+      // Transform the response data to match our Audio interface
+      const transformedAudios = response.data.map(audio => ({
+        ...audio,
+        likes: audio._count.likes,
+        comments: audio._count.comments,
+        isLiked: audio.likes && audio.likes.length > 0, // Check if the current user has liked this audio
+      }));
+
+      setAudios(transformedAudios);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching audios:', error);
@@ -90,8 +100,26 @@ const Home = () => {
   };
 
   const handleLike = async (audioId: string) => {
+    // Find the current audio
+    const currentAudio = audios.find(audio => audio.id === audioId);
+    if (!currentAudio) return;
+
+    // Optimistically update UI
+    setAudios(prevAudios =>
+      prevAudios.map(audio =>
+        audio.id === audioId
+          ? {
+              ...audio,
+              isLiked: !audio.isLiked,
+              likes: audio.isLiked ? Math.max(0, audio.likes - 1) : audio.likes + 1,
+            }
+          : audio
+      )
+    );
+
     try {
-      await axios.post(
+      // Make API call
+      const response = await axios.post(
         `http://localhost:5000/api/audio/${audioId}/like`,
         {},
         {
@@ -101,25 +129,46 @@ const Home = () => {
         }
       );
       
+      // If API call fails, revert the optimistic update
+      if (!response.data || typeof response.data.liked !== 'boolean') {
+        setAudios(prevAudios =>
+          prevAudios.map(audio =>
+            audio.id === audioId
+              ? {
+                  ...audio,
+                  isLiked: currentAudio.isLiked,
+                  likes: currentAudio.likes,
+                }
+              : audio
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error processing like:', error);
+      // Revert optimistic update on error
       setAudios(prevAudios =>
         prevAudios.map(audio =>
           audio.id === audioId
             ? {
                 ...audio,
-                likes: audio.isLiked ? audio.likes - 1 : audio.likes + 1,
-                isLiked: !audio.isLiked,
+                isLiked: currentAudio.isLiked,
+                likes: currentAudio.likes,
               }
             : audio
         )
       );
-    } catch (error) {
-      console.error('Error liking audio:', error);
     }
   };
 
   const handleComment = (audioId: string) => {
-    // TODO: Implement comment functionality
-    console.log('Comment clicked for audio:', audioId);
+    // Update the comment count when a new comment is added
+    setAudios(prevAudios =>
+      prevAudios.map(audio =>
+        audio.id === audioId
+          ? { ...audio, comments: audio.comments + 1 }
+          : audio
+      )
+    );
   };
 
   const handleUserClick = (username: string) => {

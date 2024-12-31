@@ -5,24 +5,29 @@ import {
   Typography,
   Avatar,
   CircularProgress,
+  TextField,
+  Button,
 } from '@mui/material';
 import {
   Favorite,
   FavoriteBorder,
   Comment,
-  Person,
   MusicNote,
   Close,
+  Send,
 } from '@mui/icons-material';
 import WaveSurfer from 'wavesurfer.js';
 import AnimatedGradient from './AnimatedGradient';
+import axios from 'axios';
 
 interface Comment {
   id: string;
-  text: string;
+  content: string;
+  createdAt: string;
   user: {
+    id: string;
     username: string;
-    avatar?: string;
+    avatar: string | null;
   };
 }
 
@@ -75,6 +80,10 @@ const FullScreenAudioCard = ({
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isPostingComment, setIsPostingComment] = useState(false);
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [gradientColors] = useState(() => generateRandomColors());
@@ -142,9 +151,61 @@ const FullScreenAudioCard = ({
     }
   }, [isVisible, canAutoplay, isLoading]);
 
-  const handleCommentClick = () => {
+  const handleCommentClick = async () => {
     setShowComments(true);
-    onComment();
+    await fetchComments();
+  };
+
+  const fetchComments = async () => {
+    setIsLoadingComments(true);
+    try {
+      const response = await axios.get(`http://localhost:5000/api/audio/${audio.id}/comments`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      setComments(response.data);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!commentText.trim() || isPostingComment) return;
+
+    setIsPostingComment(true);
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/audio/${audio.id}/comment`,
+        { content: commentText },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      setComments(prev => [response.data, ...prev]);
+      setCommentText('');
+      onComment(); // Update comment count in parent component
+    } catch (error) {
+      console.error('Error posting comment:', error);
+    } finally {
+      setIsPostingComment(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handlePostComment();
+    }
+  };
+
+  const handleLikeClick = () => {
+    // Just call the parent's onLike handler
+    onLike();
   };
 
   return (
@@ -157,7 +218,7 @@ const FullScreenAudioCard = ({
 
       {/* Audio visualization */}
       <Box 
-        className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 -mt-8"
+        className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{ opacity: isLoading ? 0 : 1 }}
       >
         <Box className="w-full px-6">
@@ -178,51 +239,54 @@ const FullScreenAudioCard = ({
         </Box>
       )}
 
-      {/* Right sidebar actions */}
-      <Box className="absolute right-4 bottom-20 flex flex-col gap-4 items-center">
-        <Box className="flex flex-col items-center">
-          <IconButton 
-            onClick={onLike} 
-            className="text-white transform transition-transform duration-200 hover:scale-110"
-          >
-            {audio.isLiked ? (
-              <Favorite className="text-red-500" fontSize="large" />
-            ) : (
-              <FavoriteBorder fontSize="large" />
-            )}
-          </IconButton>
-          <Typography className="text-white text-sm drop-shadow-lg">
-            {audio.likes}
+      {/* Bottom container for user info and actions */}
+      <Box className="absolute bottom-16 left-0 right-0 flex items-end justify-between px-4 pb-2">
+        {/* User info */}
+        <Box className="flex-1 text-white p-4">
+          <Box className="flex items-center gap-2 mb-2">
+            <MusicNote className="text-sm" />
+            <Typography variant="body1" className="font-semibold drop-shadow-lg">
+              {audio.title}
+            </Typography>
+          </Box>
+          <Typography variant="body2" className="opacity-80 font-medium drop-shadow-lg">
+            @{audio.user.username}
+          </Typography>
+          <Typography variant="body2" className="opacity-60 mt-1 drop-shadow-lg">
+            {audio.description}
           </Typography>
         </Box>
 
-        <Box className="flex flex-col items-center">
-          <IconButton 
-            onClick={handleCommentClick}
-            className="text-white transform transition-transform duration-200 hover:scale-110"
-          >
-            <Comment fontSize="large" />
-          </IconButton>
-          <Typography className="text-white text-sm drop-shadow-lg">
-            {audio.comments}
-          </Typography>
-        </Box>
-      </Box>
+        {/* Action buttons */}
+        <Box className="flex flex-col gap-4 items-center p-4">
+          <Box className="flex flex-col items-center">
+            <IconButton 
+              onClick={handleLikeClick} 
+              className="text-white transform transition-transform duration-200 hover:scale-110"
+            >
+              {audio.isLiked ? (
+                <Favorite className="text-red-500" fontSize="large" />
+              ) : (
+                <FavoriteBorder fontSize="large" />
+              )}
+            </IconButton>
+            <Typography className="text-white text-sm drop-shadow-lg">
+              {audio.likes}
+            </Typography>
+          </Box>
 
-      {/* Bottom info */}
-      <Box className="absolute bottom-16 left-0 right-0 p-6 text-white">
-        <Box className="flex items-center gap-2 mb-2">
-          <MusicNote className="text-sm" />
-          <Typography variant="body1" className="font-semibold drop-shadow-lg">
-            {audio.title}
-          </Typography>
+          <Box className="flex flex-col items-center">
+            <IconButton 
+              onClick={handleCommentClick}
+              className="text-white transform transition-transform duration-200 hover:scale-110"
+            >
+              <Comment fontSize="large" />
+            </IconButton>
+            <Typography className="text-white text-sm drop-shadow-lg">
+              {audio.comments}
+            </Typography>
+          </Box>
         </Box>
-        <Typography variant="body2" className="opacity-80 font-medium drop-shadow-lg">
-          @{audio.user.username}
-        </Typography>
-        <Typography variant="body2" className="opacity-60 mt-2 drop-shadow-lg">
-          {audio.description}
-        </Typography>
       </Box>
 
       {/* Comments overlay */}
@@ -232,26 +296,97 @@ const FullScreenAudioCard = ({
           onClick={() => setShowComments(false)}
         >
           <Box 
-            className="absolute bottom-16 left-0 right-0 bg-gray-900 rounded-t-xl p-4"
+            className="absolute right-0 top-0 bottom-16 w-full sm:w-96 bg-gray-900 shadow-lg transition-transform duration-300 transform"
             onClick={e => e.stopPropagation()}
-            style={{ maxHeight: 'calc(100vh - 4rem)' }}
           >
-            <Box className="flex justify-between items-center mb-4">
-              <Typography variant="h6" className="text-white">
-                Comments ({audio.comments})
-              </Typography>
-              <IconButton 
-                onClick={() => setShowComments(false)}
-                className="text-white"
-              >
-                <Close />
-              </IconButton>
+            {/* Comments header with close button */}
+            <Box className="sticky top-0 z-10 bg-gray-900">
+              <Box className="flex items-center p-4 border-b border-gray-800">
+                <IconButton 
+                  onClick={() => setShowComments(false)}
+                  className="text-white hover:text-gray-300"
+                  edge="start"
+                  sx={{ 
+                    color: 'white',
+                    '&:hover': { 
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    }
+                  }}
+                >
+                  <Close sx={{ color: 'white', fontSize: 28 }} />
+                </IconButton>
+                <Typography variant="h6" className="text-white flex-1 text-center pr-10">
+                  Comments ({audio.comments})
+                </Typography>
+              </Box>
             </Box>
-            <Box className="overflow-y-auto max-h-[calc(100vh-8rem)]">
-              {/* Add comment input and list here */}
-              <Typography className="text-gray-400 text-center py-4">
-                Comments coming soon...
-              </Typography>
+
+            {/* Comment input */}
+            <Box className="p-4 border-b border-gray-800">
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Add a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                disabled={isPostingComment}
+                multiline
+                maxRows={3}
+                InputProps={{
+                  style: { color: 'white' },
+                  className: 'bg-gray-800 rounded-lg',
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.23)' },
+                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                    '&.Mui-focused fieldset': { borderColor: 'white' },
+                  },
+                }}
+              />
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handlePostComment}
+                disabled={!commentText.trim() || isPostingComment}
+                className="mt-2"
+                startIcon={isPostingComment ? <CircularProgress size={20} /> : <Send />}
+              >
+                Post Comment
+              </Button>
+            </Box>
+
+            {/* Comments list */}
+            <Box className="overflow-y-auto" style={{ height: 'calc(100% - 180px)' }}>
+              {isLoadingComments ? (
+                <Box className="flex justify-center py-4">
+                  <CircularProgress />
+                </Box>
+              ) : comments.length > 0 ? (
+                comments.map((comment) => (
+                  <Box key={comment.id} className="p-4 border-b border-gray-800">
+                    <Box className="flex items-center gap-2 mb-2">
+                      <Avatar src={comment.user.avatar || undefined} alt={comment.user.username} />
+                      <Box>
+                        <Typography className="text-white font-medium">
+                          @{comment.user.username}
+                        </Typography>
+                        <Typography variant="caption" className="text-gray-400">
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Typography className="text-white pl-10">
+                      {comment.content}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography className="text-gray-400 text-center py-4">
+                  No comments yet. Be the first to comment!
+                </Typography>
+              )}
             </Box>
           </Box>
         </Box>
