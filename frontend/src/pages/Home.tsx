@@ -4,6 +4,7 @@ import { Person, CloudUpload, Logout } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import FullScreenAudioCard from '../components/FullScreenAudioCard';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Audio {
   id: string;
@@ -28,6 +29,7 @@ const Home = () => {
   const touchStartX = useRef(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const { logout, user } = useAuth();
 
   useEffect(() => {
     fetchAudios();
@@ -63,7 +65,7 @@ const Home = () => {
         ...audio,
         likes: audio._count.likes,
         comments: audio._count.comments,
-        isLiked: audio.likes && audio.likes.length > 0, // Check if the current user has liked this audio
+        isLiked: audio.likes?.some(like => like.userId === user?.id), // Check if the current user has liked this audio
       }));
 
       setAudios(transformedAudios);
@@ -100,89 +102,67 @@ const Home = () => {
   };
 
   const handleLike = async (audioId: string) => {
-    // Find the current audio
-    const currentAudio = audios.find(audio => audio.id === audioId);
-    if (!currentAudio) return;
-
-    // Optimistically update UI
-    setAudios(prevAudios =>
-      prevAudios.map(audio =>
-        audio.id === audioId
-          ? {
-              ...audio,
-              isLiked: !audio.isLiked,
-              likes: audio.isLiked ? Math.max(0, audio.likes - 1) : audio.likes + 1,
-            }
-          : audio
-      )
-    );
-
     try {
-      // Make API call
+      const token = localStorage.getItem('token');
       const response = await axios.post(
         `http://localhost:5000/api/audio/${audioId}/like`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
-      
-      // If API call fails, revert the optimistic update
-      if (!response.data || typeof response.data.liked !== 'boolean') {
-        setAudios(prevAudios =>
-          prevAudios.map(audio =>
-            audio.id === audioId
-              ? {
-                  ...audio,
-                  isLiked: currentAudio.isLiked,
-                  likes: currentAudio.likes,
-                }
-              : audio
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error processing like:', error);
-      // Revert optimistic update on error
-      setAudios(prevAudios =>
-        prevAudios.map(audio =>
+
+      setAudios((prevAudios) =>
+        prevAudios.map((audio) =>
           audio.id === audioId
             ? {
                 ...audio,
-                isLiked: currentAudio.isLiked,
-                likes: currentAudio.likes,
+                isLiked: response.data.liked,
+                likes: response.data.liked
+                  ? audio.likes + 1
+                  : audio.likes - 1,
               }
             : audio
         )
       );
+    } catch (error) {
+      console.error('Error liking audio:', error);
     }
   };
 
   const handleComment = (audioId: string) => {
-    // Update the comment count when a new comment is added
-    setAudios(prevAudios =>
-      prevAudios.map(audio =>
+    setAudios((prevAudios) =>
+      prevAudios.map((audio) =>
         audio.id === audioId
-          ? { ...audio, comments: audio.comments + 1 }
+          ? {
+              ...audio,
+              comments: audio.comments + 1,
+            }
           : audio
       )
     );
   };
 
   const handleUserClick = (username: string) => {
-    // TODO: Navigate to user profile
-    console.log('Navigate to user profile:', username);
+    navigate(`/profile/${username}`);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogoutClick = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    const username = audios[currentIndex]?.user.username;
+    if (username) {
+      navigate(`/profile/${username}`);
+    }
   };
 
   const handleUploadClick = () => {
@@ -277,7 +257,7 @@ const Home = () => {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
             }
           }}
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
         >
           <Logout sx={{ fontSize: 28 }} />
         </IconButton>

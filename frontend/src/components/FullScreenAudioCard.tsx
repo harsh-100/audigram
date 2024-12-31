@@ -249,7 +249,11 @@ const FullScreenAudioCard = ({
               {audio.title}
             </Typography>
           </Box>
-          <Typography variant="body2" className="opacity-80 font-medium drop-shadow-lg">
+          <Typography 
+            variant="body2" 
+            className="opacity-80 font-medium drop-shadow-lg hover:underline cursor-pointer"
+            onClick={() => onUserClick()}
+          >
             @{audio.user.username}
           </Typography>
           <Typography variant="body2" className="opacity-60 mt-1 drop-shadow-lg">
@@ -289,10 +293,10 @@ const FullScreenAudioCard = ({
         </Box>
       </Box>
 
-      {/* Comments overlay */}
+      {/* Comments section */}
       {showComments && (
         <Box 
-          className="absolute inset-0 bg-black bg-opacity-90 z-50 transition-opacity duration-300"
+          className="fixed inset-0 bg-black bg-opacity-80 z-50 transition-opacity duration-300"
           onClick={() => setShowComments(false)}
         >
           <Box 
@@ -302,7 +306,7 @@ const FullScreenAudioCard = ({
             {/* Comments header with close button */}
             <Box className="sticky top-0 z-10 bg-gray-900">
               <Box className="flex items-center p-4 border-b border-gray-800">
-                <IconButton 
+                <IconButton
                   onClick={() => setShowComments(false)}
                   className="text-white hover:text-gray-300"
                   edge="start"
