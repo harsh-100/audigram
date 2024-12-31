@@ -62,10 +62,17 @@ const Home = () => {
 
       // Transform the response data to match our Audio interface
       const transformedAudios = response.data.map(audio => ({
-        ...audio,
+        id: audio.id,
+        title: audio.title,
+        description: audio.description,
+        filePath: audio.filePath,
+        user: {
+          username: audio.user.username,
+          avatar: audio.user.avatar,
+        },
         likes: audio._count.likes,
         comments: audio._count.comments,
-        isLiked: audio.likes?.some(like => like.userId === user?.id), // Check if the current user has liked this audio
+        isLiked: audio.likes.length > 0, // If there's any like in the array, it means the current user has liked it
       }));
 
       setAudios(transformedAudios);
@@ -114,6 +121,7 @@ const Home = () => {
         }
       );
 
+      // Update the audio's like status and count
       setAudios((prevAudios) =>
         prevAudios.map((audio) =>
           audio.id === audioId
@@ -122,7 +130,7 @@ const Home = () => {
                 isLiked: response.data.liked,
                 likes: response.data.liked
                   ? audio.likes + 1
-                  : audio.likes - 1,
+                  : Math.max(0, audio.likes - 1), // Ensure likes don't go negative
               }
             : audio
         )
