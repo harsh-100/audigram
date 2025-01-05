@@ -31,10 +31,15 @@ sudo certbot certonly --standalone -d $DOMAIN || error_exit "Failed to generate 
 # Create SSL directory if it doesn't exist
 sudo mkdir -p /etc/ssl/private
 
+# Clean up existing nginx configurations
+echo "Cleaning up nginx configurations..."
+sudo rm -f /etc/nginx/sites-enabled/*
+sudo rm -f /etc/nginx/sites-available/*
+sudo rm -f /etc/nginx/conf.d/*
+
 # Update nginx configuration
 echo "Updating nginx configuration..."
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo tee /etc/nginx/sites-available/audioshorts.fun > /dev/null <<EOF
+sudo tee /etc/nginx/conf.d/audioshorts.conf > /dev/null <<EOF
 server {
     listen 80;
     server_name audioshorts.fun;
@@ -73,7 +78,6 @@ server {
 }
 EOF
 
-sudo ln -sf /etc/nginx/sites-available/audioshorts.fun /etc/nginx/sites-enabled/
 sudo nginx -t || error_exit "Nginx configuration test failed"
 
 # Start nginx

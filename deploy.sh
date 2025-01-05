@@ -62,11 +62,9 @@ sudo cp -r dist/* /usr/share/nginx/html/
 
 # Restart nginx
 echo "Restarting nginx..."
-sudo systemctl restart nginx
-
-# After copying frontend build
+sudo systemctl stop nginx
 sudo nginx -t || error_exit "Nginx configuration test failed"
-sudo systemctl restart nginx
+sudo systemctl start nginx
 
 echo -e "${GREEN}Deployment completed!${NC}"
 echo "Backend running on https://audioshorts.fun/api"
