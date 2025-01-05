@@ -48,10 +48,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email,
         password,
       });
-      const { user, token } = response.data;
+      const { token } = response.data;
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
     } catch (error) {
       throw new Error('Invalid credentials');
     }
@@ -64,10 +64,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         username,
         password,
       });
-      const { user, token } = response.data;
+      const { token } = response.data;
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
     } catch (error) {
       throw new Error('Registration failed');
     }
