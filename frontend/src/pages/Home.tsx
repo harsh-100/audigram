@@ -1,5 +1,5 @@
 import { CloudUpload, Logout, Person } from '@mui/icons-material';
-import { Box, CircularProgress, IconButton } from '@mui/material';
+import { Box, CircularProgress, IconButton, Button } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FullScreenAudioCard from '../components/FullScreenAudioCard';
@@ -22,6 +22,7 @@ interface Audio {
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [audios, setAudios] = useState<Audio[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,15 +30,28 @@ const Home = () => {
   const touchStartX = useRef(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const { logout } = useAuth();
 
   useEffect(() => {
-    fetchAudios();
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
-    // Add a click listener to detect first interaction
+        await fetchAudios();
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Add interaction detection
     const handleFirstInteraction = () => {
       setHasInteracted(true);
-      // Remove the listener after first interaction
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
@@ -49,7 +63,7 @@ const Home = () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, []);
+  }, [user]);
 
   const fetchAudios = async () => {
     try {
@@ -60,7 +74,6 @@ const Home = () => {
         },
       });
 
-      // Transform the response data to match our Audio interface
       const transformedAudios = response.data.map(audio => ({
         id: audio.id,
         title: audio.title,
@@ -72,13 +85,13 @@ const Home = () => {
         },
         likes: audio._count.likes,
         comments: audio._count.comments,
-        isLiked: audio.likes.length > 0, // If there's any like in the array, it means the current user has liked it
+        isLiked: audio.likes.length > 0,
       }));
 
       setAudios(transformedAudios);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching audios:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -167,9 +180,8 @@ const Home = () => {
   };
 
   const handleProfileClick = () => {
-    const username = audios[currentIndex]?.user.username;
-    if (username) {
-      navigate(`/profile/${username}`);
+    if (user) {
+      navigate(`/profile/${user.username}`);
     }
   };
 
@@ -185,90 +197,97 @@ const Home = () => {
     );
   }
 
-  if (audios.length === 0) {
-    return (
-      <Box className="fixed inset-0 flex items-center justify-center bg-black text-white">
-        No audios found. Follow some users to see their content!
-      </Box>
-    );
-  }
-
   return (
-    <Box 
-      className="fixed inset-0 bg-black overflow-hidden touch-none flex flex-col"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <Box className="fixed inset-0 bg-black overflow-hidden touch-none flex flex-col">
       <Box className="flex-1 relative overflow-hidden">
-        <Box
-          className="absolute inset-0 transition-transform duration-300 ease-out"
-          style={{
-            transform: `translateY(-${currentIndex * 100}%)`,
-          }}
-        >
-          {audios.map((audio, index) => (
-            <Box
-              key={audio.id}
-              className="absolute inset-0 w-full h-full"
-              style={{
-                transform: `translateY(${index * 100}%)`,
-              }}
-            >
-              <FullScreenAudioCard
-                audio={audio}
-                onLike={() => handleLike(audio.id)}
-                onComment={() => handleComment(audio.id)}
-                onUserClick={() => handleUserClick(audio.user.username)}
-                isVisible={index === currentIndex}
-                canAutoplay={hasInteracted}
-              />
-            </Box>
-          ))}
-        </Box>
+        {audios.length === 0 ? (
+          <Box className="fixed inset-0 flex items-center justify-center text-white text-lg">
+            No audios found. Follow some users to see their content!
+          </Box>
+        ) : (
+          <Box
+            className="absolute inset-0 transition-transform duration-300 ease-out"
+            style={{
+              transform: `translateY(-${currentIndex * 100}%)`,
+            }}
+          >
+            {audios.map((audio, index) => (
+              <Box
+                key={audio.id}
+                className="absolute inset-0 w-full h-full"
+                style={{
+                  transform: `translateY(${index * 100}%)`,
+                }}
+              >
+                <FullScreenAudioCard
+                  audio={audio}
+                  onLike={() => handleLike(audio.id)}
+                  onComment={() => handleComment(audio.id)}
+                  onUserClick={() => handleUserClick(audio.user.username)}
+                  isVisible={index === currentIndex}
+                  canAutoplay={hasInteracted}
+                />
+              </Box>
+            ))}
+          </Box>
+        )}
       </Box>
 
       <Box 
         className="h-16 bg-black bg-opacity-95 border-t border-gray-800 flex justify-around items-center px-4"
-        onClick={e => e.stopPropagation()} // Prevent swipe detection on bottom bar
+        onClick={e => e.stopPropagation()}
       >
-        <IconButton
-          className="text-white hover:text-gray-300 transition-colors"
-          sx={{ 
-            color: 'white',
-            '&:hover': { 
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
-          }}
-          onClick={handleProfileClick}
-        >
-          <Person sx={{ fontSize: 28 }} />
-        </IconButton>
+        {user ? (
+          <>
+            <IconButton
+              className="text-white hover:text-gray-300 transition-colors"
+              sx={{ 
+                color: 'white',
+                '&:hover': { 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+              onClick={handleProfileClick}
+            >
+              <Person sx={{ fontSize: 28 }} />
+            </IconButton>
 
-        <IconButton
-          className="text-white hover:text-gray-300 transition-colors"
-          sx={{ 
-            color: 'white',
-            '&:hover': { 
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
-          }}
-          onClick={handleUploadClick}
-        >
-          <CloudUpload sx={{ fontSize: 28 }} />
-        </IconButton>
+            <IconButton
+              className="text-white hover:text-gray-300 transition-colors"
+              sx={{ 
+                color: 'white',
+                '&:hover': { 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+              onClick={handleUploadClick}
+            >
+              <CloudUpload sx={{ fontSize: 28 }} />
+            </IconButton>
 
-        <IconButton
-          className="text-white hover:text-gray-300 transition-colors"
-          sx={{ 
-            color: 'white',
-            '&:hover': { 
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }
-          }}
-          onClick={handleLogoutClick}
-        >
-          <Logout sx={{ fontSize: 28 }} />
-        </IconButton>
+            <IconButton
+              className="text-white hover:text-gray-300 transition-colors"
+              sx={{ 
+                color: 'white',
+                '&:hover': { 
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+              onClick={handleLogoutClick}
+            >
+              <Logout sx={{ fontSize: 28 }} />
+            </IconButton>
+          </>
+        ) : (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => navigate('/login')}
+            className="w-32"
+          >
+            Login
+          </Button>
+        )}
       </Box>
     </Box>
   );

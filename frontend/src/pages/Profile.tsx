@@ -7,8 +7,9 @@ import {
   Grid,
   Typography,
 } from '@mui/material';
+import { CloudUpload } from '@mui/icons-material';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import AudioCard from '../components/AudioCard';
 import { api } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,12 +46,15 @@ interface Audio {
 
 const Profile = () => {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [audios, setAudios] = useState<Audio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [following, setFollowing] = useState(false);
-  const { user } = useAuth();
+
+  const isOwnProfile = user?.username === username;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,6 +75,10 @@ const Profile = () => {
 
     fetchProfile();
   }, [username]);
+
+  const handleUploadClick = () => {
+    navigate('/upload');
+  };
 
   const handleFollow = async () => {
     if (!user || !profile) return;
@@ -152,15 +160,26 @@ const Profile = () => {
           </Grid>
         </Grid>
 
-        {user && user.username !== profile.username && (
-          <Button
-            variant={following ? 'outlined' : 'contained'}
-            color="primary"
-            onClick={handleFollow}
-          >
-            {following ? 'Unfollow' : 'Follow'}
-          </Button>
-        )}
+        <Box className="flex justify-center gap-4">
+          {isOwnProfile ? (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<CloudUpload />}
+              onClick={handleUploadClick}
+            >
+              Upload New Audio
+            </Button>
+          ) : user && (
+            <Button
+              variant={following ? 'outlined' : 'contained'}
+              color="primary"
+              onClick={handleFollow}
+            >
+              {following ? 'Unfollow' : 'Follow'}
+            </Button>
+          )}
+        </Box>
       </Box>
 
       <Typography variant="h5" className="mb-4">

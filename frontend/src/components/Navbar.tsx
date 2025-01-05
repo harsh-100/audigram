@@ -1,6 +1,6 @@
-import { Link as RouterLink } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, IconButton, Avatar } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
+import { AppBar, Avatar, Button, IconButton, Toolbar, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = () => {
@@ -27,7 +27,7 @@ const Navbar = () => {
                 <IconButton color="inherit">
                   <Avatar
                     alt={user.username}
-                    src="/path-to-avatar.jpg"
+                    src={user.avatar || undefined}
                     sx={{ width: 32, height: 32 }}
                   />
                 </IconButton>

@@ -33,25 +33,51 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const userData = JSON.parse(localStorage.getItem('user') || 'null');
-      setUser(userData);
+  const validateAndRefreshUser = async (token: string) => {
+    try {
+      const tokenWithBearer = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+      
+      const response = await api.get('/api/auth/me', {
+        headers: {
+          Authorization: tokenWithBearer
+        }
+      });
+      
+      setUser(response.data);
+      return true;
+    } catch (error) {
+      console.error('Error validating user:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      return false;
     }
-    setLoading(false);
+  };
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        console.log('Token found, validating user');
+        await validateAndRefreshUser(token);
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/api/auth/login', {
-        email,
+        login: email,
         password,
       });
-      const { token } = response.data;
+      
+      const { token, user } = response.data;
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      setUser(response.data.user);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
     } catch (error) {
       throw new Error('Invalid credentials');
     }
@@ -64,16 +90,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         username,
         password,
       });
-      const { token } = response.data;
+      
+      const { token, user } = response.data;
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      setUser(response.data.user);
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
     } catch (error) {
       throw new Error('Registration failed');
     }
   };
 
   const logout = () => {
+    console.log('Logging out');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
