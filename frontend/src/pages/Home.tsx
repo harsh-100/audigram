@@ -1,7 +1,7 @@
 import { CloudUpload, Logout, Person } from '@mui/icons-material';
 import { Box, CircularProgress, IconButton, Button } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import FullScreenAudioCard from '../components/FullScreenAudioCard';
 import { api } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,19 +30,23 @@ const Home = () => {
   const touchStartX = useRef(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
         await fetchAudios();
+        
+        // Check for saved audio index in location state
+        const savedIndex = (location.state as { audioIndex?: number })?.audioIndex;
+        if (savedIndex !== undefined && savedIndex >= 0) {
+          setCurrentIndex(savedIndex);
+          // Clear the state after using it
+          navigate('/', { replace: true, state: {} });
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -63,16 +67,14 @@ const Home = () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [user]);
+  }, [location.state, navigate]);
 
   const fetchAudios = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await api.get('/api/audio/feed', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      
+      const response = await api.get('/api/audio/feed', { headers });
 
       const transformedAudios = response.data.map(audio => ({
         id: audio.id,
@@ -85,7 +87,7 @@ const Home = () => {
         },
         likes: audio._count.likes,
         comments: audio._count.comments,
-        isLiked: audio.likes.length > 0,
+        isLiked: audio.likes?.length > 0 || false,
       }));
 
       setAudios(transformedAudios);
@@ -121,7 +123,17 @@ const Home = () => {
     }
   };
 
+  const handleAuthRequired = () => {
+    // Save current audio index to localStorage before redirecting
+    localStorage.setItem('lastViewedAudio', currentIndex.toString());
+    navigate('/login');
+  };
+
   const handleLike = async (audioId: string) => {
+    if (!user) {
+      handleAuthRequired();
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const response = await api.post(
@@ -154,6 +166,10 @@ const Home = () => {
   };
 
   const handleComment = (audioId: string) => {
+    if (!user) {
+      handleAuthRequired();
+      return;
+    }
     setAudios((prevAudios) =>
       prevAudios.map((audio) =>
         audio.id === audioId
@@ -199,7 +215,11 @@ const Home = () => {
 
   return (
     <Box className="fixed inset-0 bg-black overflow-hidden touch-none flex flex-col">
-      <Box className="flex-1 relative overflow-hidden">
+      <Box 
+        className="flex-1 relative overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {audios.length === 0 ? (
           <Box className="fixed inset-0 flex items-center justify-center text-white text-lg">
             No audios found. Follow some users to see their content!

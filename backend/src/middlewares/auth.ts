@@ -39,4 +39,27 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
   } catch (error) {
     res.status(401).json({ error: 'Please authenticate.' });
   }
+};
+
+// Add optional auth middleware
+export const optionalAuth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.userId },
+        select: { id: true }
+      });
+
+      if (user) {
+        req.user = user;
+      }
+    }
+    next();
+  } catch (error) {
+    // If token is invalid, just continue without user
+    next();
+  }
 }; 

@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { auth } from '../middlewares/auth';
+import { auth, optionalAuth } from '../middlewares/auth';
 import { prisma } from '../server';
 
 const router = express.Router();
@@ -58,10 +58,11 @@ router.post('/', auth, upload.single('audio'), async (req, res) => {
 });
 
 // Get random audios for feed
-router.get('/feed', auth, async (req, res) => {
+router.get('/feed', optionalAuth, async (req, res) => {
   try {
+    const userId = req.user?.id; // Will be undefined for non-authenticated users
+    
     const audios = await prisma.audio.findMany({
-      take: 10,
       orderBy: {
         createdAt: 'desc'
       },
@@ -73,14 +74,14 @@ router.get('/feed', auth, async (req, res) => {
             avatar: true
           }
         },
-        likes: {
+        likes: userId ? {
           where: {
-            userId: req.user!.id
+            userId: userId
           },
           select: {
             userId: true
           }
-        },
+        } : false,
         _count: {
           select: {
             likes: true,

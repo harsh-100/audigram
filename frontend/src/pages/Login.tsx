@@ -22,7 +22,16 @@ const Login = () => {
       });
 
       localStorage.setItem('token', response.data.token);
-      navigate('/');
+      
+      // Check if there was a saved audio index
+      const lastViewedAudio = localStorage.getItem('lastViewedAudio');
+      localStorage.removeItem('lastViewedAudio'); // Clean up
+      
+      if (lastViewedAudio) {
+        navigate('/', { state: { audioIndex: parseInt(lastViewedAudio) } });
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to login');
     } finally {
