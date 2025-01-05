@@ -13,7 +13,12 @@ error_exit() {
 
 # Install required packages
 echo "Installing required packages..."
-sudo apt-get update && sudo apt-get install -y screen || error_exit "Failed to install screen"
+sudo apt-get update && sudo apt-get install -y screen nginx || error_exit "Failed to install required packages"
+
+# Run SSL setup if certificates don't exist
+if [ ! -d "/etc/letsencrypt/live" ]; then
+    ./setup-ssl.sh || error_exit "Failed to setup SSL"
+fi
 
 # Backend deployment
 echo -e "${GREEN}Setting up backend...${NC}"
@@ -47,14 +52,15 @@ npm install || error_exit "Failed to install frontend dependencies"
 echo "Building frontend..."
 npm run build || error_exit "Failed to build frontend"
 
-# Start frontend server in screen
-echo "Starting frontend server..."
-screen -dmS frontend bash -c "cd $(pwd) && npm run dev"
+# Copy build to nginx directory
+sudo cp -r dist/* /usr/share/nginx/html/
+
+# Restart nginx
+sudo systemctl restart nginx
 
 echo -e "${GREEN}Deployment completed!${NC}"
-echo "Backend running on http://localhost:5000"
-echo "Frontend running on http://localhost:5173"
-echo "To view running servers:"
+echo "Backend running on https://audioshorts.fun/api"
+echo "Frontend running on https://audioshorts.fun"
+echo "To view backend logs:"
 echo "  screen -r backend"
-echo "  screen -r frontend"
 echo "To detach from screen: Ctrl+A then D" 

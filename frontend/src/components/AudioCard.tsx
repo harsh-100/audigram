@@ -5,6 +5,7 @@ import { PlayArrow, Pause, Favorite, FavoriteBorder, Comment } from '@mui/icons-
 import WaveSurfer from 'wavesurfer.js';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 interface AudioProps {
   audio: {
@@ -46,7 +47,7 @@ const AudioCard = ({ audio }: AudioProps) => {
         height: 60,
       });
 
-      wavesurferRef.current.load(`http://localhost:5000/${audio.filePath}`);
+      wavesurferRef.current.load(`${API_URL}/${audio.filePath}`);
 
       return () => {
         if (wavesurferRef.current) {
@@ -72,7 +73,7 @@ const AudioCard = ({ audio }: AudioProps) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/audio/${audio.id}/like`,
+        `${API_URL}/api/audio/${audio.id}/like`,
         {},
         {
           headers: {

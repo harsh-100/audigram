@@ -19,6 +19,7 @@ import {
 import WaveSurfer from 'wavesurfer.js';
 import AnimatedGradient from './AnimatedGradient';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 interface Comment {
   id: string;
@@ -104,7 +105,7 @@ const FullScreenAudioCard = ({
         interact: false,
       });
 
-      const audioUrl = `http://localhost:5000/${audio.filePath.startsWith('/') ? audio.filePath.slice(1) : audio.filePath}`;
+      const audioUrl = `${API_URL}/${audio.filePath.startsWith('/') ? audio.filePath.slice(1) : audio.filePath}`;
       wavesurferRef.current.load(audioUrl);
 
       wavesurferRef.current.on('ready', () => {
@@ -159,7 +160,7 @@ const FullScreenAudioCard = ({
   const fetchComments = async () => {
     setIsLoadingComments(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/audio/${audio.id}/comments`, {
+      const response = await axios.get(`${API_URL}/api/audio/${audio.id}/comments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -178,7 +179,7 @@ const FullScreenAudioCard = ({
     setIsPostingComment(true);
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/audio/${audio.id}/comment`,
+        `${API_URL}/api/audio/${audio.id}/comment`,
         { content: commentText },
         {
           headers: {
