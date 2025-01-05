@@ -1,4 +1,4 @@
-export const API_URL = 'http://localhost:5000';
+export const API_URL = 'https://audioshorts.fun';
 
 // Create axios instance with default config
 import axios from 'axios';
