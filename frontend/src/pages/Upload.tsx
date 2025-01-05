@@ -1,18 +1,18 @@
-import { useState, useRef, ChangeEvent, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Alert,
-  CircularProgress,
-  Tabs,
-  Tab,
-} from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
-import axios from 'axios';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { ChangeEvent, FormEvent, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AudioRecorder from '../components/AudioRecorder';
+import { api } from '../config/api';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -86,7 +86,7 @@ const Upload = () => {
     formData.append('tags', tags);
 
     try {
-      await axios.post('http://localhost:5000/api/audio', formData, {
+      await api.post('/api/audio', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('token')}`,

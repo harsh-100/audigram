@@ -1,25 +1,24 @@
-import { useState, useRef, useEffect } from 'react';
 import {
-  Box,
-  IconButton,
-  Typography,
-  Avatar,
-  CircularProgress,
-  TextField,
-  Button,
-} from '@mui/material';
-import {
+  Close,
+  Comment,
   Favorite,
   FavoriteBorder,
-  Comment,
   MusicNote,
-  Close,
   Send,
 } from '@mui/icons-material';
+import {
+  Avatar,
+  Box,
+  Button,
+  CircularProgress,
+  IconButton,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
+import { api, API_URL } from '../config/api';
 import AnimatedGradient from './AnimatedGradient';
-import axios from 'axios';
-import { API_URL } from '../config/api';
 
 interface Comment {
   id: string;
@@ -160,7 +159,7 @@ const FullScreenAudioCard = ({
   const fetchComments = async () => {
     setIsLoadingComments(true);
     try {
-      const response = await axios.get(`${API_URL}/api/audio/${audio.id}/comments`, {
+      const response = await api.get(`/api/audio/${audio.id}/comments`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -178,8 +177,8 @@ const FullScreenAudioCard = ({
 
     setIsPostingComment(true);
     try {
-      const response = await axios.post(
-        `${API_URL}/api/audio/${audio.id}/comment`,
+      const response = await api.post(
+        `/api/audio/${audio.id}/comment`,
         { content: commentText },
         {
           headers: {

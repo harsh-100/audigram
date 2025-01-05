@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { CloudUpload, Logout, Person } from '@mui/icons-material';
 import { Box, CircularProgress, IconButton } from '@mui/material';
-import { Person, CloudUpload, Logout } from '@mui/icons-material';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import FullScreenAudioCard from '../components/FullScreenAudioCard';
+import { api } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Audio {
@@ -54,7 +54,7 @@ const Home = () => {
   const fetchAudios = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/audio/feed', {
+      const response = await api.get('/api/audio/feed', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -111,8 +111,8 @@ const Home = () => {
   const handleLike = async (audioId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `http://localhost:5000/api/audio/${audioId}/like`,
+      const response = await api.post(
+        `/api/audio/${audioId}/like`,
         {},
         {
           headers: {

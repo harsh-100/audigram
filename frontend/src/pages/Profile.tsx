@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import {
-  Box,
-  Typography,
+  Alert,
   Avatar,
+  Box,
   Button,
   CircularProgress,
-  Alert,
   Grid,
+  Typography,
 } from '@mui/material';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import AudioCard from '../components/AudioCard';
+import { api } from '../config/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Profile {
   id: string;
@@ -56,8 +56,8 @@ const Profile = () => {
     const fetchProfile = async () => {
       try {
         const [profileRes, audiosRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/users/${username}`),
-          axios.get(`http://localhost:5000/api/users/${username}/audios`),
+          api.get(`/api/users/${username}`),
+          api.get(`/api/users/${username}/audios`),
         ]);
 
         setProfile(profileRes.data);
@@ -76,8 +76,8 @@ const Profile = () => {
     if (!user || !profile) return;
 
     try {
-      const response = await axios.post(
-        `http://localhost:5000/api/users/${profile.id}/follow`,
+      const response = await api.post(
+        `/api/users/${profile.id}/follow`,
         {},
         {
           headers: {

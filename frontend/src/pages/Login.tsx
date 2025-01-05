@@ -1,14 +1,14 @@
-import { useState, FormEvent, ChangeEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import {
-  Box,
-  TextField,
-  Button,
-  Typography,
   Alert,
+  Box,
+  Button,
   CircularProgress,
+  TextField,
+  Typography,
 } from '@mui/material';
-import axios from 'axios';
+import { ChangeEvent, FormEvent, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../config/api';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await api.post('/api/auth/login', {
         login,
         password,
       });

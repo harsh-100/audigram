@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { Comment, Favorite, FavoriteBorder, Pause, PlayArrow } from '@mui/icons-material';
+import { Avatar, Card, CardContent, IconButton, Typography } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, Typography, IconButton, Avatar } from '@mui/material';
-import { PlayArrow, Pause, Favorite, FavoriteBorder, Comment } from '@mui/icons-material';
 import WaveSurfer from 'wavesurfer.js';
+import { api, API_URL } from '../config/api';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
-import { API_URL } from '../config/api';
 
 interface AudioProps {
   audio: {
@@ -72,8 +71,8 @@ const AudioCard = ({ audio }: AudioProps) => {
     if (!user) return;
 
     try {
-      const response = await axios.post(
-        `${API_URL}/api/audio/${audio.id}/like`,
+      const response = await api.post(
+        `/api/audio/${audio.id}/like`,
         {},
         {
           headers: {
