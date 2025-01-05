@@ -37,10 +37,13 @@ const Home = () => {
       try {
         await fetchAudios();
         
-        // Check for saved audio index in location state
-        const savedIndex = (location.state as { audioIndex?: number })?.audioIndex;
-        if (savedIndex !== undefined && savedIndex >= 0) {
-          setCurrentIndex(savedIndex);
+        // Handle shared audio
+        const sharedAudioId = (location.state as { sharedAudioId?: string })?.sharedAudioId;
+        if (sharedAudioId) {
+          const audioIndex = audios.findIndex(audio => audio.id === sharedAudioId);
+          if (audioIndex !== -1) {
+            setCurrentIndex(audioIndex);
+          }
           // Clear the state after using it
           navigate('/', { replace: true, state: {} });
         }

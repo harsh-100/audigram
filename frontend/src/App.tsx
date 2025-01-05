@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Upload from './pages/Upload';
+import Share from './pages/Share';
 
 const theme = createTheme({
   palette: {
@@ -65,6 +66,7 @@ function App() {
                     </PrivateRoute>
                   }
                 />
+                <Route path="/share/:audioId" element={<Share />} />
               </Routes>
             </main>
           </div>

@@ -5,6 +5,7 @@ import {
   FavoriteBorder,
   MusicNote,
   Send,
+  Share,
 } from '@mui/icons-material';
 import {
   Avatar,
@@ -19,6 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { api, API_URL } from '../config/api';
 import AnimatedGradient from './AnimatedGradient';
+import ShareButton from './ShareButton';
 
 interface Comment {
   id: string;
@@ -288,6 +290,13 @@ const FullScreenAudioCard = ({
             </IconButton>
             <Typography className="text-white text-sm drop-shadow-lg">
               {audio.comments}
+            </Typography>
+          </Box>
+
+          <Box className="flex flex-col items-center">
+            <ShareButton audioId={audio.id} />
+            <Typography className="text-white text-sm drop-shadow-lg">
+              Share
             </Typography>
           </Box>
         </Box>

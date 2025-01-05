@@ -194,4 +194,38 @@ router.get('/:id/comments', async (req, res) => {
   }
 });
 
+// Get single audio
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const audio = await prisma.audio.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true
+          }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true
+          }
+        }
+      }
+    });
+
+    if (!audio) {
+      return res.status(404).json({ error: 'Audio not found' });
+    }
+
+    res.json(audio);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching audio' });
+  }
+});
+
 export default router; 
