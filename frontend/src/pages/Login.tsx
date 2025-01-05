@@ -1,11 +1,12 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { TextField, Button, Typography, Box, Alert } from '@mui/material';
-import { api } from '../config/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [login, setLogin] = useState('');
+  const { login } = useAuth();
+  const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,12 +17,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/api/auth/login', {
-        login,
-        password,
-      });
-
-      localStorage.setItem('token', response.data.token);
+      await login(loginInput, password);
       
       // Check if there was a saved audio index
       const lastViewedAudio = localStorage.getItem('lastViewedAudio');
@@ -33,7 +29,7 @@ const Login = () => {
         navigate('/');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to login');
+      setError(err.message || 'Failed to login');
     } finally {
       setLoading(false);
     }
@@ -55,8 +51,8 @@ const Login = () => {
         <TextField
           label="Email or Username"
           fullWidth
-          value={login}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => setLogin(e.target.value)}
+          value={loginInput}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setLoginInput(e.target.value)}
           required
         />
 

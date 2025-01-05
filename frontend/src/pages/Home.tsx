@@ -22,6 +22,7 @@ interface Audio {
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const [audios, setAudios] = useState<Audio[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -30,8 +31,8 @@ const Home = () => {
   const touchStartX = useRef(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const location = useLocation();
 
+  // Add effect to refetch data when user state changes
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -55,8 +56,10 @@ const Home = () => {
     };
 
     fetchData();
+  }, [user, location.state, navigate]); // Add user as dependency
 
-    // Add interaction detection
+  // Separate effect for interaction detection
+  useEffect(() => {
     const handleFirstInteraction = () => {
       setHasInteracted(true);
       document.removeEventListener('click', handleFirstInteraction);
@@ -70,7 +73,7 @@ const Home = () => {
       document.removeEventListener('click', handleFirstInteraction);
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
-  }, [location.state, navigate]);
+  }, []); // Empty dependency array since this only needs to run once
 
   const fetchAudios = async () => {
     try {
