@@ -52,10 +52,16 @@ npm install || error_exit "Failed to install frontend dependencies"
 echo "Building frontend..."
 npm run build || error_exit "Failed to build frontend"
 
+# Ensure nginx html directory exists
+sudo mkdir -p /usr/share/nginx/html
+
 # Copy build to nginx directory
+echo "Copying frontend build to nginx..."
+sudo rm -rf /usr/share/nginx/html/*
 sudo cp -r dist/* /usr/share/nginx/html/
 
 # Restart nginx
+echo "Restarting nginx..."
 sudo systemctl restart nginx
 
 echo -e "${GREEN}Deployment completed!${NC}"

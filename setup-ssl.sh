@@ -33,33 +33,28 @@ sudo mkdir -p /etc/ssl/private
 
 # Update nginx configuration
 echo "Updating nginx configuration..."
-sudo tee /etc/nginx/conf.d/default.conf > /dev/null <<EOF
+sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    listen [::]:80;
+    server_name audioshorts.fun;
     return 301 https://\$server_name\$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name $DOMAIN;
+    listen [::]:443 ssl http2;
+    server_name audioshorts.fun;
 
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-    ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:50m;
-    ssl_session_tickets off;
-
-    # Modern configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
+    ssl_certificate /etc/letsencrypt/live/audioshorts.fun/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/audioshorts.fun/privkey.pem;
 
     root /usr/share/nginx/html;
     index index.html;
 
     location / {
         try_files \$uri \$uri/ /index.html;
+        add_header Cache-Control "no-cache";
     }
 
     location /api {
@@ -81,6 +76,10 @@ server {
     }
 }
 EOF
+
+# Create symlink and remove default config
+sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/conf.d/default.conf
 
 # Start nginx
 echo "Starting nginx..."
