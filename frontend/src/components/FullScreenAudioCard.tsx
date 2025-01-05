@@ -89,6 +89,7 @@ const FullScreenAudioCard = ({
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [gradientColors] = useState(() => generateRandomColors());
   const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -111,7 +112,7 @@ const FullScreenAudioCard = ({
 
       wavesurferRef.current.on('ready', () => {
         setIsLoading(false);
-        if (isVisible && canAutoplay) {
+        if (isVisible && canAutoplay && !isPaused) {
           wavesurferRef.current?.play();
         }
       });
@@ -123,7 +124,7 @@ const FullScreenAudioCard = ({
       });
 
       wavesurferRef.current.on('finish', () => {
-        if (wavesurferRef.current && isVisible) {
+        if (wavesurferRef.current && isVisible && !isPaused) {
           wavesurferRef.current.play();
         }
       });
@@ -140,18 +141,18 @@ const FullScreenAudioCard = ({
         wavesurferRef.current = null;
       }
     };
-  }, [audio.filePath, isVisible, canAutoplay]);
+  }, [audio.filePath, isVisible, canAutoplay, isPaused]);
 
-  // Handle visibility changes
+  // Add effect to handle visibility changes
   useEffect(() => {
     if (!wavesurferRef.current || isLoading) return;
 
-    if (isVisible && canAutoplay) {
+    if (isVisible && canAutoplay && !isPaused) {
       wavesurferRef.current.play();
     } else {
       wavesurferRef.current.pause();
     }
-  }, [isVisible, canAutoplay, isLoading]);
+  }, [isVisible, canAutoplay, isLoading, isPaused]);
 
   const handleCommentClick = async () => {
     setShowComments(true);
@@ -210,6 +211,20 @@ const FullScreenAudioCard = ({
     onLike();
   };
 
+  const handleTap = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    
+    if (!wavesurferRef.current) return;
+
+    if (wavesurferRef.current.isPlaying()) {
+      wavesurferRef.current.pause();
+      setIsPaused(true);
+    } else {
+      wavesurferRef.current.play();
+      setIsPaused(false);
+    }
+  };
+
   return (
     <Box className="absolute inset-0">
       {/* Animated Gradient Background */}
@@ -222,6 +237,7 @@ const FullScreenAudioCard = ({
       <Box 
         className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
         style={{ opacity: isLoading ? 0 : 1 }}
+        onClick={(e: React.MouseEvent) => handleTap(e)}
       >
         <Box className="w-full px-6">
           <div 

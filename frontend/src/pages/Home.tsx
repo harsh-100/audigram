@@ -31,32 +31,59 @@ const Home = () => {
   const touchStartX = useRef(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [sharedAudioId, setSharedAudioId] = useState<string | null>(null);
 
-  // Add effect to refetch data when user state changes
+  useEffect(() => {
+    const state = location.state as { sharedAudioId?: string; fromShare?: boolean };
+    if (state?.sharedAudioId && state.fromShare) {
+      setSharedAudioId(state.sharedAudioId);
+      // Clear the navigation state but keep the URL
+      window.history.replaceState({}, '');
+    }
+  }, [location]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await fetchAudios();
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
         
-        // Handle shared audio
-        const sharedAudioId = (location.state as { sharedAudioId?: string })?.sharedAudioId;
+        const response = await api.get('/api/audio/feed', { headers });
+
+        const transformedAudios = response.data.map(audio => ({
+          id: audio.id,
+          title: audio.title,
+          description: audio.description,
+          filePath: audio.filePath,
+          user: {
+            username: audio.user.username,
+            avatar: audio.user.avatar,
+          },
+          likes: audio._count.likes,
+          comments: audio._count.comments,
+          isLiked: audio.likes?.length > 0 || false,
+        }));
+
+        setAudios(transformedAudios);
+
+        // Handle shared audio after audios are loaded
         if (sharedAudioId) {
-          const audioIndex = audios.findIndex(audio => audio.id === sharedAudioId);
+          const audioIndex = transformedAudios.findIndex(audio => audio.id === sharedAudioId);
           if (audioIndex !== -1) {
             setCurrentIndex(audioIndex);
           }
-          // Clear the state after using it
-          navigate('/', { replace: true, state: {} });
+          setSharedAudioId(null); // Clear the shared audio id after using it
         }
+
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
-      } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [user, location.state, navigate]); // Add user as dependency
+  }, [user, sharedAudioId]); // Add sharedAudioId as dependency
 
   // Separate effect for interaction detection
   useEffect(() => {
@@ -74,35 +101,6 @@ const Home = () => {
       document.removeEventListener('touchstart', handleFirstInteraction);
     };
   }, []); // Empty dependency array since this only needs to run once
-
-  const fetchAudios = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
-      const response = await api.get('/api/audio/feed', { headers });
-
-      const transformedAudios = response.data.map(audio => ({
-        id: audio.id,
-        title: audio.title,
-        description: audio.description,
-        filePath: audio.filePath,
-        user: {
-          username: audio.user.username,
-          avatar: audio.user.avatar,
-        },
-        likes: audio._count.likes,
-        comments: audio._count.comments,
-        isLiked: audio.likes?.length > 0 || false,
-      }));
-
-      setAudios(transformedAudios);
-    } catch (error) {
-      console.error('Error fetching audios:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
