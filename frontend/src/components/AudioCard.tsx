@@ -43,7 +43,6 @@ const AudioCard = ({ audio }: AudioProps) => {
         cursorColor: '#fff',
         barWidth: 2,
         barRadius: 3,
-        responsive: true,
         height: 60,
       });
 

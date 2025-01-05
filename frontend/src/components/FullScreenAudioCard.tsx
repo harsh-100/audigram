@@ -78,7 +78,6 @@ const FullScreenAudioCard = ({
   canAutoplay,
 }: FullScreenAudioCardProps) => {
   const [isLoading, setIsLoading] = useState(true);
-  const [progress, setProgress] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -87,6 +86,7 @@ const FullScreenAudioCard = ({
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const [gradientColors] = useState(() => generateRandomColors());
+  const [progress, setProgress] = useState(0);
 
   // Initialize WaveSurfer
   useEffect(() => {
@@ -395,6 +395,12 @@ const FullScreenAudioCard = ({
           </Box>
         </Box>
       )}
+
+      {/* Progress indicator */}
+      <Box 
+        className="absolute bottom-0 left-0 h-1 bg-white bg-opacity-50"
+        style={{ width: `${progress}%` }}
+      />
     </Box>
   );
 };

@@ -29,7 +29,7 @@ const Home = () => {
   const touchStartX = useRef(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
   useEffect(() => {
     fetchAudios();
