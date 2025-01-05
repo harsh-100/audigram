@@ -11,13 +11,18 @@ error_exit() {
     exit 1
 }
 
+# Stop nginx if running
+echo "Stopping nginx..."
+sudo systemctl stop nginx
+
 # Install certbot
 echo "Installing certbot..."
 sudo apt-get update
 sudo apt-get install -y certbot python3-certbot-nginx || error_exit "Failed to install certbot"
 
 # Get domain name
-read -p "Enter your domain name (e.g., example.com): " DOMAIN
+DOMAIN="audioshorts.fun"
+echo "Setting up SSL for $DOMAIN"
 
 # Generate SSL certificate
 echo "Generating SSL certificate for $DOMAIN..."
@@ -50,9 +55,6 @@ server {
     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
 
-    # HSTS (uncomment if you're sure)
-    # add_header Strict-Transport-Security "max-age=63072000" always;
-
     root /usr/share/nginx/html;
     index index.html;
 
@@ -79,6 +81,10 @@ server {
     }
 }
 EOF
+
+# Start nginx
+echo "Starting nginx..."
+sudo systemctl start nginx
 
 echo -e "${GREEN}SSL setup completed!${NC}"
 echo "Your site should now be accessible at https://$DOMAIN" 
