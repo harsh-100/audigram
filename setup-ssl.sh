@@ -33,17 +33,16 @@ sudo mkdir -p /etc/ssl/private
 
 # Update nginx configuration
 echo "Updating nginx configuration..."
-sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo tee /etc/nginx/sites-available/audioshorts.fun > /dev/null <<EOF
 server {
     listen 80;
-    listen [::]:80;
     server_name audioshorts.fun;
     return 301 https://\$server_name\$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen 443 ssl;
     server_name audioshorts.fun;
 
     ssl_certificate /etc/letsencrypt/live/audioshorts.fun/fullchain.pem;
@@ -54,32 +53,28 @@ server {
 
     location / {
         try_files \$uri \$uri/ /index.html;
-        add_header Cache-Control "no-cache";
     }
 
-    location /api {
-        proxy_pass http://localhost:5000;
+    location /api/ {
+        proxy_pass http://localhost:5000/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
-    location /uploads {
-        proxy_pass http://localhost:5000;
+    location /uploads/ {
+        proxy_pass http://localhost:5000/uploads/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
     }
 }
 EOF
 
-# Create symlink and remove default config
-sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/conf.d/default.conf
+sudo ln -sf /etc/nginx/sites-available/audioshorts.fun /etc/nginx/sites-enabled/
+sudo nginx -t || error_exit "Nginx configuration test failed"
 
 # Start nginx
 echo "Starting nginx..."
