@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Kill processes running on the development ports
-echo "Stopping frontend server..."
-kill $(lsof -t -i:5173) 2>/dev/null || echo "Frontend server not running"
+# Kill screen sessions
+screen -X -S backend quit
+screen -X -S frontend quit
 
-echo "Stopping backend server..."
-kill $(lsof -t -i:5000) 2>/dev/null || echo "Backend server not running"
+# Kill any remaining processes on ports
+pkill -f "node.*start"
+pkill -f "node.*dev"
 
 echo "All servers stopped" 

@@ -3,12 +3,7 @@
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
+NC='\033[0m'
 
 # Function to display error and exit
 error_exit() {
@@ -16,24 +11,9 @@ error_exit() {
     exit 1
 }
 
-# Check for required commands
-command_exists node || error_exit "Node.js is not installed"
-command_exists npm || error_exit "npm is not installed"
-
-# Function to run a command in a new terminal
-run_in_terminal() {
-    if command_exists gnome-terminal; then
-        gnome-terminal -- bash -c "$1; exec bash"
-    elif command_exists xterm; then
-        xterm -e "bash -c '$1; exec bash'" &
-    elif command_exists terminal; then
-        terminal -e "bash -c '$1; exec bash'" &
-    else
-        error_exit "No suitable terminal emulator found"
-    fi
-}
-
-echo -e "${GREEN}Starting deployment...${NC}"
+# Install required packages
+echo "Installing required packages..."
+sudo apt-get update && sudo apt-get install -y screen || error_exit "Failed to install screen"
 
 # Backend deployment
 echo -e "${GREEN}Setting up backend...${NC}"
@@ -51,9 +31,9 @@ npx prisma generate || error_exit "Failed to generate Prisma client"
 echo "Building backend..."
 npm run build || error_exit "Failed to build backend"
 
-# Start backend server in a new terminal
+# Start backend server in screen
 echo "Starting backend server..."
-run_in_terminal "cd $(pwd) && npm run start"
+screen -dmS backend bash -c "cd $(pwd) && npm run start"
 
 # Frontend deployment
 echo -e "${GREEN}Setting up frontend...${NC}"
@@ -67,14 +47,14 @@ npm install || error_exit "Failed to install frontend dependencies"
 echo "Building frontend..."
 npm run build || error_exit "Failed to build frontend"
 
-# Start frontend server in a new terminal
+# Start frontend server in screen
 echo "Starting frontend server..."
-run_in_terminal "cd $(pwd) && npm run dev"
+screen -dmS frontend bash -c "cd $(pwd) && npm run dev"
 
 echo -e "${GREEN}Deployment completed!${NC}"
 echo "Backend running on http://localhost:5000"
 echo "Frontend running on http://localhost:5173"
-
-# Keep the script running
-echo "Press Ctrl+C to stop all servers"
-wait 
+echo "To view running servers:"
+echo "  screen -r backend"
+echo "  screen -r frontend"
+echo "To detach from screen: Ctrl+A then D" 
