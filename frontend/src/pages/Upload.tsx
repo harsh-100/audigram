@@ -46,6 +46,7 @@ const Upload = () => {
   const [tabValue, setTabValue] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -64,26 +65,22 @@ const Upload = () => {
     }
   };
 
-  const handleRecordingComplete = (audioBlob: Blob) => {
-    const file = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
-    setFile(file);
+  const handleRecordingComplete = (blob: Blob) => {
+    setAudioBlob(blob);
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!file) {
-      setError('Please select or record an audio file');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!audioBlob) return;
 
     const formData = new FormData();
-    formData.append('audio', file);
+    formData.append('audio', audioBlob);
     formData.append('title', title);
     formData.append('description', description);
     formData.append('tags', tags);
+
+    setLoading(true);
+    setError('');
 
     try {
       await api.post('/api/audio', formData, {

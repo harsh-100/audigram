@@ -12,6 +12,10 @@ router.post('/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
 
+    if (!email || !username || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -46,7 +50,7 @@ router.post('/register', async (req, res) => {
     );
 
     // Return user data along with token
-    res.json({ 
+    res.status(201).json({ 
       token,
       user: {
         id: user.id,
